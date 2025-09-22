@@ -1,6 +1,6 @@
 // src/lib/utils.ts
-import { clsx } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { clsx } from 'clsx'
+import { twMerge } from 'tailwind-merge'
 
 /**
  * Tailwind のクラス結合補助。

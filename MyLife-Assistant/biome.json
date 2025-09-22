@@ -6,8 +6,8 @@
 		"useIgnoreFile": true
 	},
 	"files": {
-		"include": ["src/**/*", "*.js", "*.ts", "*.jsx", "*.tsx"],
-		"ignore": ["node_modules", "dist", "build", "coverage"]
+		"includes": ["src/**/*", "*.js", "*.ts", "*.jsx", "*.tsx"],
+		"ignoreUnknown": false
 	},
 	"formatter": {
 		"enabled": true,
@@ -19,27 +19,13 @@
 		"enabled": true,
 		"rules": {
 			"recommended": true,
-			"a11y": {
-				"recommended": true
-			},
-			"complexity": {
-				"recommended": true
-			},
-			"correctness": {
-				"recommended": true
-			},
-			"performance": {
-				"recommended": true
-			},
-			"security": {
-				"recommended": true
-			},
-			"style": {
-				"recommended": true
-			},
-			"suspicious": {
-				"recommended": true
-			}
+			"a11y": { "recommended": true },
+			"complexity": { "recommended": true },
+			"correctness": { "recommended": true },
+			"performance": { "recommended": true },
+			"security": { "recommended": true },
+			"style": { "recommended": true },
+			"suspicious": { "recommended": true }
 		}
 	},
 	"javascript": {
