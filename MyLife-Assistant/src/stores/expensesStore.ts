@@ -5,6 +5,11 @@ import type { Expense, ExpenseId } from '@/features/expenses/domain/types'
 
 type ExpensesState = {
   items: Expense[]
+  // ---- Step 5-L 追加: 履歴スタック ----
+  past: Expense[][]
+  future: Expense[][]
+  canUndo: boolean
+  canRedo: boolean
 }
 
 type ExpensesActions = {
@@ -14,6 +19,11 @@ type ExpensesActions = {
   addMany: (list: Array<Omit<Expense, 'id'> & { id?: ExpenseId }>) => void
   setAll: (list: Expense[]) => void
   clear: () => void
+  // ---- Step 5-L 追加: 履歴メソッド ----
+  commit: () => void
+  undo: () => void
+  redo: () => void
+  clearHistory: () => void
 }
 
 export type ExpensesStore = ExpensesState & ExpensesActions
@@ -32,10 +42,18 @@ function genId(): ExpenseId {
   return maybeRandomUUID() ?? `exp_${Date.now()}_${Math.random().toString(36).slice(2)}`
 }
 
+// 履歴用スナップショット作成
+const snapshot = (items: Expense[]): Expense[] => items.map((x) => ({ ...x }))
+
 export const useExpensesStore = create<ExpensesStore>()(
   persist(
     immer((set) => ({
       items: [],
+      // ---- Step 5-L 追加: 履歴初期状態 ----
+      past: [],
+      future: [],
+      canUndo: false,
+      canRedo: false,
 
       add: (input) =>
         set((s) => {
@@ -74,6 +92,57 @@ export const useExpensesStore = create<ExpensesStore>()(
       clear: () =>
         set((s) => {
           s.items = []
+        }),
+
+      // ---- Step 5-L 追加: 履歴メソッド ----
+      commit: () =>
+        set((s) => {
+          s.past.push(snapshot(s.items))
+          if (s.future.length > 0) {
+            s.future = []
+          }
+          const nextCanUndo = s.past.length > 0
+          const nextCanRedo = s.future.length > 0
+          if (s.canUndo !== nextCanUndo) s.canUndo = nextCanUndo
+          if (s.canRedo !== nextCanRedo) s.canRedo = nextCanRedo
+        }),
+
+      undo: () =>
+        set((s) => {
+          if (s.past.length === 0) return
+          const prevIndex = s.past.length - 1
+          const prev: Expense[] = s.past[prevIndex]
+          s.past.splice(prevIndex, 1)
+          const curr = snapshot(s.items)
+          s.future.push(curr)
+          s.items = prev
+          const nextCanUndo = s.past.length > 0
+          const nextCanRedo = s.future.length > 0
+          if (s.canUndo !== nextCanUndo) s.canUndo = nextCanUndo
+          if (s.canRedo !== nextCanRedo) s.canRedo = nextCanRedo
+        }),
+
+      redo: () =>
+        set((s) => {
+          if (s.future.length === 0) return
+          const nextIndex = s.future.length - 1
+          const next: Expense[] = s.future[nextIndex]
+          s.future.splice(nextIndex, 1)
+          const curr = snapshot(s.items)
+          s.past.push(curr)
+          s.items = next
+          const nextCanUndo = s.past.length > 0
+          const nextCanRedo = s.future.length > 0
+          if (s.canUndo !== nextCanUndo) s.canUndo = nextCanUndo
+          if (s.canRedo !== nextCanRedo) s.canRedo = nextCanRedo
+        }),
+
+      clearHistory: () =>
+        set((s) => {
+          s.past = []
+          s.future = []
+          s.canUndo = false
+          s.canRedo = false
         }),
     })),
     {
