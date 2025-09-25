@@ -21,6 +21,60 @@ export function DashboardPage() {
   const remaining = monthlyBudget - total
   const recent5 = inThisBudgetMonth.slice(0, 5)
 
+  // ---- Step 6-B: 「今月のハイライト」計算 ----
+  // 前月の予算期間
+  const prevMonthAnchor = useMemo(() => dayjs(nowISO).subtract(1, 'month').toISOString(), [nowISO])
+  const prevRange = useMemo(
+    () => getBudgetPeriod(prevMonthAnchor, monthStartDay),
+    [prevMonthAnchor, monthStartDay]
+  )
+  const prevMonthItems = useMemo(
+    () => items.filter((it) => isWithin(it.date, prevRange.start, prevRange.end)),
+    [items, prevRange.start, prevRange.end]
+  )
+  const prevTotal = useMemo(
+    () => prevMonthItems.reduce((acc, it) => acc + it.amount, 0),
+    [prevMonthItems]
+  )
+  const momDeltaPct = useMemo(() => {
+    if (prevTotal <= 0 && total <= 0) return 0
+    if (prevTotal <= 0) return 100
+    return Math.round(((total - prevTotal) / prevTotal) * 100)
+  }, [total, prevTotal])
+
+  // 今月トップカテゴリ
+  const topCategory = useMemo(() => {
+    const acc = new Map<string, number>()
+    for (const it of inThisBudgetMonth) {
+      acc.set(it.category, (acc.get(it.category) ?? 0) + it.amount)
+    }
+    let top: { category: string; total: number } | null = null
+    for (const [cat, sum] of acc) {
+      if (!top || sum > top.total) top = { category: cat, total: sum }
+    }
+    return top
+  }, [inThisBudgetMonth])
+
+  // 今月の最大支出
+  const maxExpense = useMemo(() => {
+    if (inThisBudgetMonth.length === 0) return null
+    return inThisBudgetMonth.reduce((a, b) => (a.amount >= b.amount ? a : b))
+  }, [inThisBudgetMonth])
+
+  // 今月の平均支出（1レコードあたり）
+  const avgExpense = useMemo(() => {
+    if (inThisBudgetMonth.length === 0) return 0
+    return Math.round(total / inThisBudgetMonth.length)
+  }, [total, inThisBudgetMonth.length])
+
+  const categoryLabels: Record<string, string> = {
+    food: '食費',
+    rent: '家賃',
+    utilities: '光熱費',
+    transport: '交通',
+    other: 'その他',
+  }
+
   // 最近6か月のキー(YYYY-MM)を新しい順に
   const recentMonths = useMemo(() => {
     const base = dayjs().startOf('month')
@@ -58,17 +112,66 @@ export function DashboardPage() {
 
   const grandTotal = useMemo(() => items.reduce((acc, it) => acc + it.amount, 0), [items])
 
-  const categoryLabels: Record<string, string> = {
-    food: '食費',
-    rent: '家賃',
-    utilities: '光熱費',
-    transport: '交通',
-    other: 'その他',
-  }
-
   return (
     <div className="mx-auto max-w-5xl p-4 pb-24 space-y-6">
       <h1 className="text-xl font-semibold">ダッシュボード</h1>
+
+      {/* Step 6-B: 今月のハイライト */}
+      <Card>
+        <CardHeader>
+          <CardTitle>今月のハイライト</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+            <div className="rounded-md border p-3">
+              <div className="text-xs text-muted-foreground">今月合計</div>
+              <div className="mt-1 text-lg font-semibold tabular-nums">
+                ¥{total.toLocaleString()}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                レコード: {inThisBudgetMonth.length} 件
+              </div>
+            </div>
+            <div className="rounded-md border p-3">
+              <div className="text-xs text-muted-foreground">前月比</div>
+              <div className="mt-1 text-lg font-semibold tabular-nums">
+                {momDeltaPct >= 0 ? '+' : ''}
+                {momDeltaPct}%
+              </div>
+              <div className="text-xs text-muted-foreground">
+                前月: ¥{prevTotal.toLocaleString()}
+              </div>
+            </div>
+            <div className="rounded-md border p-3">
+              <div className="text-xs text-muted-foreground">トップカテゴリ</div>
+              <div className="mt-1 text-lg font-semibold">
+                {topCategory ? (categoryLabels[topCategory.category] ?? topCategory.category) : '—'}
+              </div>
+              <div className="text-xs text-muted-foreground tabular-nums">
+                {topCategory ? `¥${topCategory.total.toLocaleString()}` : '—'}
+              </div>
+            </div>
+            <div className="rounded-md border p-3">
+              <div className="text-xs text-muted-foreground">最大支出 / 平均</div>
+              <div className="mt-1 text-lg font-semibold tabular-nums">
+                {maxExpense ? `¥${maxExpense.amount.toLocaleString()}` : '—'}
+              </div>
+              <div className="text-xs text-muted-foreground tabular-nums">
+                平均: {avgExpense > 0 ? `¥${avgExpense.toLocaleString()}` : '—'}
+              </div>
+            </div>
+          </div>
+          {/* 最大支出の詳細（任意表示） */}
+          {maxExpense && (
+            <div className="mt-3 text-sm text-muted-foreground">
+              最大支出の詳細: {dayjs(maxExpense.date).format('YYYY/MM/DD')}・
+              {categoryLabels[maxExpense.category] ?? maxExpense.category}・ ¥
+              {maxExpense.amount.toLocaleString()}
+              {maxExpense.memo ? `・${maxExpense.memo}` : ''}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card>
