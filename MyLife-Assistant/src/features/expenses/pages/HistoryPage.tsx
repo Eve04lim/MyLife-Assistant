@@ -3,12 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { useToast } from '@/components/ui/use-toast'
 import { useExpensesStore } from '@/stores/expensesStore'
 import { shallow } from 'zustand/shallow'
 import { deleteExpense } from '@/features/expenses/application/usecases/DeleteExpense'
 import { importExpensesFromFile } from '@/features/expenses/application/usecases/ImportCsv'
 import { exportExpensesToCsvWithOptions } from '@/features/expenses/application/usecases/ExportCsv'
-import { downloadTextAsFile } from '@/lib/csv'
+import { toExpensesCsvFromView, downloadTextAsFile, addBom } from '@/lib/csv'
 import { expenseRepo } from '@/features/expenses/infra/repositories/singleton'
 import dayjs from 'dayjs'
 import type { Category } from '@/features/expenses/domain/types'
@@ -16,6 +17,7 @@ import type { Category } from '@/features/expenses/domain/types'
 export function HistoryPage() {
   // items は shallow 比較で購読
   const items = useExpensesStore((s) => s.items, shallow)
+  const { toast } = useToast()
   // ---- Step 5-L 追加: 履歴操作 ----
   // 関数参照(undo/redo)には購読をぶら下げない：購読は boolean のみ
   const canUndo = useExpensesStore((s) => s.canUndo)
@@ -178,6 +180,27 @@ export function HistoryPage() {
     return viewItems.slice(startIndex, startIndex + PAGE_SIZE)
   }, [viewItems, currentPage])
 
+  // キーボードナビゲーション（左右キーでページング）
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const tag = (document.activeElement?.tagName || '').toLowerCase()
+      if (
+        tag === 'input' ||
+        tag === 'textarea' ||
+        (document.activeElement as HTMLElement)?.isContentEditable
+      )
+        return
+
+      if (e.key === 'ArrowLeft' && currentPage > 1) {
+        setPage(currentPage - 1)
+      } else if (e.key === 'ArrowRight' && currentPage < totalPages) {
+        setPage(currentPage + 1)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [currentPage, totalPages])
+
   // CSV インポート
   const handleImportFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -186,12 +209,20 @@ export function HistoryPage() {
       const result = await importExpensesFromFile(file, expenseRepo)
       // 期待インターフェース：{ errors?: string[] } を想定（なければ無視）
       if (result && hasErrors(result) && result.errors.length > 0) {
-        alert(`CSVインポートでエラーが発生しました:\n- ${result.errors.join('\n- ')}`)
+        toast({
+          title: 'CSVインポートエラー',
+          description: result.errors.join(', '),
+          variant: 'destructive',
+        })
       }
       // 取り込み後は store が同期更新される想定（ユースケース → Repository → Store）
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err)
-      alert(`CSVインポートに失敗しました: ${message}`)
+      toast({
+        title: 'CSVインポート失敗',
+        description: message,
+        variant: 'destructive',
+      })
     } finally {
       // 同じファイルを連続選択できるようにリセット
       if (fileInputRef.current) fileInputRef.current.value = ''
@@ -205,7 +236,25 @@ export function HistoryPage() {
       downloadTextAsFile('expenses.csv', csvText, 'text/csv;charset=utf-8;')
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err)
-      alert(`CSVエクスポートに失敗しました: ${message}`)
+      toast({
+        title: 'CSVエクスポート失敗',
+        description: message,
+        variant: 'destructive',
+      })
+    }
+  }
+
+  // 絞り込み結果のCSVエクスポート
+  const handleExportFiltered = () => {
+    try {
+      const text = toExpensesCsvFromView(viewItems)
+      const finalText = exportWithBom ? addBom(text) : text
+      const today = dayjs().format('YYYYMMDD')
+      downloadTextAsFile(`expenses_filtered_${today}.csv`, finalText, 'text/csv;charset=utf-8;')
+      toast({ title: 'エクスポート完了', description: `絞り込み ${viewItems.length} 件` })
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err)
+      toast({ title: 'エクスポート失敗', description: message, variant: 'destructive' })
     }
   }
 
@@ -383,6 +432,14 @@ export function HistoryPage() {
                 <Button type="button" onClick={handleExport} aria-label="CSVエクスポート">
                   エクスポート（CSV）
                 </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleExportFiltered}
+                  aria-label="絞り込み結果をCSVでエクスポート"
+                >
+                  絞り込み結果をエクスポート
+                </Button>
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -527,7 +584,7 @@ export function HistoryPage() {
                 className="text-sm text-muted-foreground"
                 aria-live="polite"
               >
-                {currentPage} / {totalPages}
+                ページ {currentPage} / {totalPages}
               </div>
               <Button
                 variant="outline"

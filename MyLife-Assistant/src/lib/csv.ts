@@ -49,6 +49,11 @@ export function toExpensesCsv(rows: Expense[]): string {
   return Papa.unparse(rows, { columns: ['id', 'date', 'category', 'amount', 'memo'] })
 }
 
+export function toExpensesCsvFromView(rows: Expense[]): string {
+  // 既存の toExpensesCsv と同じフォーマットでOK
+  return Papa.unparse(rows, { columns: ['id', 'date', 'category', 'amount', 'memo'] })
+}
+
 export function addBom(text: string): string {
   return `\uFEFF${text}`
 }

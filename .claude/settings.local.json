@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(CI=true pnpm install)"
+    ],
+    "deny": []
+  }
+}

@@ -5,6 +5,7 @@
  */
 import { createBrowserRouter, Outlet } from 'react-router-dom'
 import { AppFooterNav } from '@/components/common/AppFooterNav'
+import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 import { DashboardPage } from '@/features/expenses/pages/DashboardPage'
 import { HistoryPage } from '@/features/expenses/pages/HistoryPage'
 import { SettingsPage } from '@/features/settings/pages/SettingsPage'
@@ -30,6 +31,7 @@ function RootLayout() {
 export const router = createBrowserRouter([
   {
     element: <RootLayout />,
+    errorElement: <ErrorBoundary />,
     children: [
       { path: '/', element: <DashboardPage /> },
       { path: '/history', element: <HistoryPage /> },
