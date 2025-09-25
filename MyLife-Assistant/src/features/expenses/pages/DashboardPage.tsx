@@ -5,13 +5,18 @@ import { getBudgetPeriod, isWithin } from '@/lib/date'
 import dayjs from 'dayjs'
 import { useMemo } from 'react'
 import { ExpenseForm } from '@/features/expenses/components/ExpenseForm'
+import { Link } from 'react-router-dom'
 
 export function DashboardPage() {
   const items = useExpensesStore((s) => s.items)
   const { monthStartDay, monthlyBudget } = useSettings()
 
   const nowISO = dayjs().toISOString()
-  const { start, end } = getBudgetPeriod(nowISO, monthStartDay)
+  const range = useMemo(() => getBudgetPeriod(nowISO, monthStartDay), [nowISO, monthStartDay])
+  const { start, end } = range
+  const formatDateParam = (d: string) => dayjs(d).format('YYYY-MM-DD')
+  const monthStartParam = formatDateParam(range.start)
+  const monthEndParam = formatDateParam(range.end)
 
   const inThisBudgetMonth = items
     .filter((e) => isWithin(e.date, start, end))
@@ -164,7 +169,7 @@ export function DashboardPage() {
   const weekdayLabels = ['日', '月', '火', '水', '木', '金', '土']
 
   return (
-    <div className="mx-auto max-w-5xl p-4 pb-24 space-y-6">
+    <div className="py-4 pb-24 space-y-6">
       <h1 className="text-xl font-semibold">ダッシュボード</h1>
 
       {/* Step 6-C: 予算進捗 */}
@@ -201,6 +206,9 @@ export function DashboardPage() {
                 <span className="tabular-nums font-medium">¥{total.toLocaleString()}</span>
               </div>
               <div className="text-sm">
+                進捗：<span className="tabular-nums">{progressPct}%</span>
+              </div>
+              <div className="text-sm">
                 {overBudget ? (
                   <>
                     超過：
@@ -233,6 +241,15 @@ export function DashboardPage() {
           <CardTitle>今月のハイライト</CardTitle>
         </CardHeader>
         <CardContent>
+          <div className="mb-3">
+            <Link
+              to={`/history?start=${monthStartParam}&end=${monthEndParam}`}
+              aria-label="この期間の履歴へ"
+              className="underline text-primary hover:opacity-80"
+            >
+              この期間の履歴へ
+            </Link>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
             <div className="rounded-md border p-3">
               <div className="text-xs text-muted-foreground">今月合計</div>
@@ -360,7 +377,7 @@ export function DashboardPage() {
                   <div className="w-24 tabular-nums text-sm text-muted-foreground">{ym}</div>
                   <div className="h-3 flex-1 rounded bg-muted/70">
                     <div
-                      className="h-3 rounded bg-primary"
+                      className="h-3 rounded bg-primary transition-[width] duration-500 motion-reduce:transition-none"
                       style={{ width: `${widthPct}%` }}
                       aria-hidden="true"
                     />
@@ -376,6 +393,7 @@ export function DashboardPage() {
           {/* テーブル（視覚/詳細確認用） */}
           <div className="mt-4 overflow-x-auto">
             <table className="w-full text-sm">
+              <caption className="sr-only">最近6か月の支出合計一覧</caption>
               <thead>
                 <tr className="text-left text-muted-foreground">
                   <th className="p-2">月</th>
@@ -434,6 +452,7 @@ export function DashboardPage() {
               {/* テーブル */}
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
+                  <caption className="sr-only">カテゴリ別の合計・件数・構成比</caption>
                   <thead>
                     <tr className="text-left text-muted-foreground">
                       <th className="p-2">カテゴリ</th>
@@ -451,7 +470,16 @@ export function DashboardPage() {
                           <td className="p-2">{label}</td>
                           <td className="p-2">¥{total.toLocaleString()}</td>
                           <td className="p-2">{count}</td>
-                          <td className="p-2">{pct}%</td>
+                          <td className="p-2 flex items-center gap-3">
+                            <span>{pct}%</span>
+                            <Link
+                              to={`/history?start=${monthStartParam}&end=${monthEndParam}&category=${category}`}
+                              aria-label={`${label} の履歴を見る`}
+                              className="text-xs underline text-primary hover:opacity-80"
+                            >
+                              履歴
+                            </Link>
+                          </td>
                         </tr>
                       )
                     })}
@@ -480,6 +508,7 @@ export function DashboardPage() {
           {/* セマンティックな table で a11y 対応 */}
           <div className="overflow-x-auto">
             <table className="text-sm">
+              <caption className="sr-only">直近8週間の曜日別支出ヒートマップ</caption>
               <thead>
                 <tr className="text-left text-muted-foreground">
                   <th className="p-2">週</th>
@@ -511,11 +540,9 @@ export function DashboardPage() {
                         return (
                           <td key={`${weekKey}_${weekdayLabels[c]}`} className="p-2">
                             <div
-                              className="mx-auto h-6 w-6 rounded border bg-muted"
+                              className="mx-auto h-6 w-6 rounded border"
                               style={{
-                                // 背景を currentColor にはしない。muted の上に線形グラデの透明度を被せる
-                                backgroundImage: `linear-gradient(rgba(var(--primary-foreground),0), rgba(var(--primary-foreground),0))`,
-                                // Tailwind のテーマ変数に安全に合わせるため、opacity は style で
+                                backgroundColor: 'var(--color-primary)',
                                 opacity: ratio ? 0.25 + ratio * 0.65 : 0.08,
                               }}
                               title={`${weekdayLabels[c]}: ¥${v.toLocaleString()}`}

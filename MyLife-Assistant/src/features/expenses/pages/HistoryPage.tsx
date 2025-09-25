@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label'
 import { useToast } from '@/components/ui/use-toast'
 import { useExpensesStore } from '@/stores/expensesStore'
 import { shallow } from 'zustand/shallow'
+import { useSearchParams } from 'react-router-dom'
 import { deleteExpense } from '@/features/expenses/application/usecases/DeleteExpense'
 import { importExpensesFromFile } from '@/features/expenses/application/usecases/ImportCsv'
 import { exportExpensesToCsvWithOptions } from '@/features/expenses/application/usecases/ExportCsv'
@@ -18,6 +19,7 @@ export function HistoryPage() {
   // items は shallow 比較で購読
   const items = useExpensesStore((s) => s.items, shallow)
   const { toast } = useToast()
+  const [searchParams] = useSearchParams()
   // ---- Step 5-L 追加: 履歴操作 ----
   // 関数参照(undo/redo)には購読をぶら下げない：購読は boolean のみ
   const canUndo = useExpensesStore((s) => s.canUndo)
@@ -49,6 +51,44 @@ export function HistoryPage() {
 
   // ---- Step 5-N 追加: カテゴリ絞り込み状態 ----
   const [selectedCategories, setSelectedCategories] = useState<Set<Category>>(new Set())
+
+  // ---- Step 6-E: URLクエリ -> 初期状態への反映（start, end, category）----
+  // 直前に URL から適用した値を覚えておき、searchParams 変化時のみ・差分があるときだけ反映する
+  const appliedFromRef = useRef<string | null>(null)
+  const appliedToRef = useRef<string | null>(null)
+  const appliedCatsRef = useRef<string | null>(null) // 正規化後の "a,b,c"
+
+  useEffect(() => {
+    const start = searchParams.get('start') ?? ''
+    const end = searchParams.get('end') ?? ''
+    const catRaw = searchParams.get('category') ?? ''
+    const catNorm = catRaw
+      ? catRaw
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean)
+          .sort()
+          .join(',')
+      : ''
+
+    let changed = false
+    if (start && start !== appliedFromRef.current) {
+      setDateFrom(start)
+      appliedFromRef.current = start
+      changed = true
+    }
+    if (end && end !== appliedToRef.current) {
+      setDateTo(end)
+      appliedToRef.current = end
+      changed = true
+    }
+    if (catNorm && catNorm !== appliedCatsRef.current) {
+      setSelectedCategories(new Set(catNorm.split(',') as Category[]))
+      appliedCatsRef.current = catNorm
+      changed = true
+    }
+    if (changed) setPage(1)
+  }, [searchParams])
 
   const queryInputId = useId()
   const sortKeyId = useId()
@@ -263,7 +303,7 @@ export function HistoryPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl p-4 pb-24 grid gap-6">
+    <div className="py-4 pb-24 grid gap-6">
       <h1 className="text-xl font-semibold">履歴</h1>
 
       <Card>
@@ -382,6 +422,7 @@ export function HistoryPage() {
                 type="button"
                 size="sm"
                 variant={selectedCategories.size === 0 ? 'secondary' : 'outline'}
+                className="focus-visible:ring-2 focus-visible:ring-offset-2"
                 onClick={() => setSelectedCategories(new Set())}
                 aria-pressed={selectedCategories.size === 0}
                 aria-label="すべてのカテゴリを表示"
@@ -406,6 +447,7 @@ export function HistoryPage() {
                     type="button"
                     size="sm"
                     variant={isSelected ? 'secondary' : 'outline'}
+                    className="focus-visible:ring-2 focus-visible:ring-offset-2"
                     onClick={() => {
                       const newSelected = new Set(selectedCategories)
                       if (isSelected) {
@@ -575,7 +617,7 @@ export function HistoryPage() {
                 size="sm"
                 disabled={currentPage <= 1}
                 onClick={() => setPage(currentPage - 1)}
-                aria-label="前のページ"
+                aria-label="前のページへ"
               >
                 &lt; 前ページ
               </Button>
@@ -591,7 +633,7 @@ export function HistoryPage() {
                 size="sm"
                 disabled={currentPage >= totalPages}
                 onClick={() => setPage(currentPage + 1)}
-                aria-label="次のページ"
+                aria-label="次のページへ"
               >
                 次ページ &gt;
               </Button>

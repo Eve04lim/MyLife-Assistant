@@ -1,4 +1,23 @@
+@import "tailwindcss";
+
+html,
+body {
+  overflow-x: hidden;
+}
+
+* {
+  box-sizing: border-box;
+}
+
 :root {
+  /* 🔽 Tailwind v4 ユーティリティが参照するトークン（bg-primary 等）*/
+  --color-background: hsl(0 0% 100%);
+  --color-foreground: hsl(222.2 84% 4.9%);
+  --color-muted: hsl(210 40% 96.1%);
+  --color-muted-foreground: hsl(215.4 16.3% 46.9%);
+  --color-primary: hsl(221.2 83.2% 53.3%);
+  --color-primary-foreground: hsl(210 40% 98%);
+
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
@@ -13,6 +32,34 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* === semantic color utilities (Tailwindの代替) === */
+.bg-primary {
+  background-color: var(--color-primary);
+}
+.text-primary {
+  color: var(--color-primary);
+}
+
+/* 前景色トークンも使っている箇所向け */
+.text-primary-foreground {
+  color: var(--color-primary-foreground);
+}
+.bg-primary-foreground {
+  background-color: var(--color-primary-foreground);
+}
+
+/* ダークモード（OS設定に追従）でトークン上書き */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-background: hsl(222.2 84% 4.9%);
+    --color-foreground: hsl(210 40% 98%);
+    --color-muted: hsl(217.2 32.6% 17.5%);
+    --color-muted-foreground: hsl(215 20.2% 65.1%);
+    --color-primary: hsl(217.2 91.2% 59.8%);
+    --color-primary-foreground: hsl(222.2 84% 4.9%);
+  }
+}
+
 a {
   font-weight: 500;
   color: #646cff;
@@ -24,10 +71,22 @@ a:hover {
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
+  min-height: 100vh; /* 通常フローに戻す */
+}
+
+/* ルートを全幅・全高で受ける */
+#root {
   min-height: 100vh;
+  width: 100%;
+}
+
+/* 画像・SVGが列幅を超えないようにする（モバイルのにじみ出し対策） */
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
+  height: auto;
 }
 
 h1 {
