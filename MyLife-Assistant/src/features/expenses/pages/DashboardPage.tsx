@@ -21,6 +21,23 @@ export function DashboardPage() {
   const remaining = monthlyBudget - total
   const recent5 = inThisBudgetMonth.slice(0, 5)
 
+  // ---- Step 6-C: 予算進捗リング ----
+  const progressRatio = useMemo(() => {
+    if (!monthlyBudget || monthlyBudget <= 0) return 0
+    return Math.max(0, Math.min(1, total / monthlyBudget))
+  }, [total, monthlyBudget])
+  const progressPct = Math.round(progressRatio * 100)
+  const ringAngle = Math.round(progressRatio * 360)
+  const overBudget = total > monthlyBudget
+  const ringColorClass =
+    monthlyBudget <= 0
+      ? 'text-muted-foreground'
+      : overBudget
+        ? 'text-red-500'
+        : progressPct >= 80
+          ? 'text-amber-500'
+          : 'text-primary'
+
   // ---- Step 6-B: 「今月のハイライト」計算 ----
   // 前月の予算期間
   const prevMonthAnchor = useMemo(() => dayjs(nowISO).subtract(1, 'month').toISOString(), [nowISO])
@@ -115,6 +132,66 @@ export function DashboardPage() {
   return (
     <div className="mx-auto max-w-5xl p-4 pb-24 space-y-6">
       <h1 className="text-xl font-semibold">ダッシュボード</h1>
+
+      {/* Step 6-C: 予算進捗 */}
+      <Card>
+        <CardHeader>
+          <CardTitle>予算進捗</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <figure className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
+            {/* Ring */}
+            <div className={`relative size-28 ${ringColorClass}`}>
+              {/* 外側の円（グラデーション） */}
+              <div
+                className="absolute inset-0 rounded-full"
+                style={{
+                  backgroundImage: `conic-gradient(currentColor ${ringAngle}deg, hsl(var(--muted)) 0deg)`,
+                }}
+                aria-hidden="true"
+              />
+              {/* 内側のくり抜き */}
+              <div className="absolute inset-2 rounded-full bg-background" aria-hidden="true" />
+              {/* 中央パーセント表示 */}
+              <div className="absolute inset-0 flex items-center justify-center font-semibold tabular-nums">
+                {progressPct}%
+              </div>
+            </div>
+            {/* テキスト説明 */}
+            <figcaption className="space-y-1">
+              <div className="text-sm text-muted-foreground">
+                予算：¥{monthlyBudget.toLocaleString()}
+              </div>
+              <div className="text-sm">
+                使った額：
+                <span className="tabular-nums font-medium">¥{total.toLocaleString()}</span>
+              </div>
+              <div className="text-sm">
+                {overBudget ? (
+                  <>
+                    超過：
+                    <span className="tabular-nums text-red-600 font-medium">
+                      ¥{(total - monthlyBudget).toLocaleString()}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    残り：
+                    <span className="tabular-nums font-medium">
+                      ¥{(monthlyBudget - total).toLocaleString()}
+                    </span>
+                  </>
+                )}
+              </div>
+              {monthlyBudget <= 0 && (
+                <div className="text-xs text-muted-foreground">
+                  ※ 設定で月次予算を入力すると進捗が表示されます
+                </div>
+              )}
+            </figcaption>
+          </figure>
+        </CardContent>
+      </Card>
 
       {/* Step 6-B: 今月のハイライト */}
       <Card>
