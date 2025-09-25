@@ -129,6 +129,40 @@ export function DashboardPage() {
 
   const grandTotal = useMemo(() => items.reduce((acc, it) => acc + it.amount, 0), [items])
 
+  // ---- Step 6-D: 曜日×週ミニヒートマップ用データ ----
+  const recentWeeks = useMemo(() => {
+    // 直近 8 週（今週含む）: 各週の月曜日（または日曜開始でもOK）を基準にする
+    const startOfThisWeek = dayjs().startOf('week') // dayjs のデフォは日曜開始
+    return Array.from({ length: 8 }, (_, i) => startOfThisWeek.subtract(7 - i, 'week'))
+  }, [])
+
+  const heatmapMatrix = useMemo(() => {
+    // rows = 週（古い→新しい）, cols = 0..6（日→土）
+    const matrix: number[][] = recentWeeks.map(() => Array(7).fill(0))
+    for (const it of items) {
+      const d = dayjs(it.date)
+      // 属する「週の開始日」を検索
+      const idx = recentWeeks.findIndex((w) => {
+        const weekStart = w.startOf('week')
+        const weekEnd = w.endOf('week')
+        return d.isAfter(weekStart.subtract(1, 'ms')) && d.isBefore(weekEnd.add(1, 'ms'))
+      })
+      if (idx >= 0) {
+        const wd = d.day() // 0=日〜6=土
+        matrix[idx][wd] += it.amount
+      }
+    }
+    return matrix
+  }, [items, recentWeeks])
+
+  const heatmapMax = useMemo(() => {
+    const flat = heatmapMatrix.flat()
+    const max = Math.max(0, ...flat)
+    return max || 1 // 0割回避
+  }, [heatmapMatrix])
+
+  const weekdayLabels = ['日', '月', '火', '水', '木', '金', '土']
+
   return (
     <div className="mx-auto max-w-5xl p-4 pb-24 space-y-6">
       <h1 className="text-xl font-semibold">ダッシュボード</h1>
@@ -434,6 +468,75 @@ export function DashboardPage() {
               </div>
             </>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Step 6-D: 曜日×週ミニヒートマップ */}
+      <Card>
+        <CardHeader>
+          <CardTitle>曜日×週のミニヒートマップ（直近8週）</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {/* セマンティックな table で a11y 対応 */}
+          <div className="overflow-x-auto">
+            <table className="text-sm">
+              <thead>
+                <tr className="text-left text-muted-foreground">
+                  <th className="p-2">週</th>
+                  {weekdayLabels.map((w) => (
+                    <th key={w} className="p-2 text-center">
+                      {w}
+                    </th>
+                  ))}
+                  <th className="p-2 text-right">合計</th>
+                </tr>
+              </thead>
+              <tbody>
+                {heatmapMatrix.map((row, r) => {
+                  const weekStartDay = recentWeeks[r].startOf('week')
+                  const weekEndDay = recentWeeks[r].endOf('week')
+                  const weekStart = weekStartDay.format('MM/DD')
+                  const weekEnd = weekEndDay.format('MM/DD')
+                  const weekKey = `${weekStartDay.format('YYYY-MM-DD')}_${weekEndDay.format('YYYY-MM-DD')}`
+                  const weekSum = row.reduce((a, b) => a + b, 0)
+                  return (
+                    <tr key={weekKey} className="border-t">
+                      <td className="p-2 whitespace-nowrap">
+                        {weekStart}–{weekEnd}
+                      </td>
+                      {row.map((v, c) => {
+                        // 0〜100% 濃度（bg-primary の不透明度で擬似的に表現）
+                        const ratio = Math.min(1, v / heatmapMax)
+                        // hsl(var(--primary)) を使うと文字が見づらいので、枠＋背景で視認性を確保
+                        return (
+                          <td key={`${weekKey}_${weekdayLabels[c]}`} className="p-2">
+                            <div
+                              className="mx-auto h-6 w-6 rounded border bg-muted"
+                              style={{
+                                // 背景を currentColor にはしない。muted の上に線形グラデの透明度を被せる
+                                backgroundImage: `linear-gradient(rgba(var(--primary-foreground),0), rgba(var(--primary-foreground),0))`,
+                                // Tailwind のテーマ変数に安全に合わせるため、opacity は style で
+                                opacity: ratio ? 0.25 + ratio * 0.65 : 0.08,
+                              }}
+                              title={`${weekdayLabels[c]}: ¥${v.toLocaleString()}`}
+                              aria-hidden="true"
+                            />
+                            <span className="sr-only">
+                              {`${weekStart}–${weekEnd} の ${weekdayLabels[c]}: ¥${v.toLocaleString()}`}
+                            </span>
+                          </td>
+                        )
+                      })}
+                      <td className="p-2 text-right tabular-nums">¥{weekSum.toLocaleString()}</td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+          <p className="mt-2 text-xs text-muted-foreground">
+            ※ 色は相対濃度（直近8週内の最大値基準）です。
+          </p>
         </CardContent>
       </Card>
     </div>
