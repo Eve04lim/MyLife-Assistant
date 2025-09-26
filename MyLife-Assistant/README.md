@@ -1,69 +1,70 @@
-# React + TypeScript + Vite
+# 🎉 MyLife Assistant v1.0.0 - 初の安定版リリース
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**MyLife Assistant** がついに v1.0.0 として安定版リリースされました！  
+家計簿アプリとして必要な基本機能が揃い、型安全性・アクセシビリティ・操作性すべてが向上しました。
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## ✨ 主な新機能
 
-## Expanding the ESLint configuration
+- ⌨ **ショートカットキー対応**
+  - `n`: 新規入力フォームにフォーカス
+  - `g`: カテゴリ分析セクションにスクロール
+  - `r`: 月次レポートモーダルを開く
+  - `?`: ショートカットヘルプをトースト表示
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- 📊 **カテゴリ分析強化**
+  - 月間・週別タブを切り替え可能
+  - 降順棒グラフとカテゴリ合計表示
+  - ARIA対応のセマンティック構造
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- 🧾 **月次レポートモーダル**
+  - 合計・件数・平均・トップカテゴリ表示
+  - そのままPNG保存・印刷が可能
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+- 🔄 **定期支出スケルトン**
+  - 家賃や光熱費などの定期支出を登録
+  - 今月分の下書きをワンクリックで生成
+  - 下書きを一括反映して履歴に追加
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+- 🖼 **エクスポート強化**
+  - html-to-image による高解像度PNG出力
+  - 新ウィンドウ印刷でCSS完全再現
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+---
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## 🛠 改善点
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+- 型安全化: `Category` 型導入、`nanoid` → `crypto.randomUUID` に移行
+- Lint警告ゼロ・TypeScriptエラーゼロを達成
+- アクセシビリティ: `aria-keyshortcuts` 追加、見出しにショートカット表示
+- printElement 改良で !important 不要化、ページ汚染なし
+
+---
+
+## 🏆 結果
+
+- **UX向上:** キーボード操作で高速入力
+- **可搬性:** PWAやモバイル対応を視野に入れた拡張しやすい設計
+- **品質:** WCAG準拠、型安全、パフォーマンス最適化済み
+
+---
+
+## 📸 スクリーンショット（READMEにも追記推奨）
+
+> *ここにカテゴリ分析・月次レポート・定期支出セクションのスクショを添付すると最高です*
+
+---
+
+## 💡 次のステップ（v1.1.0 以降）
+
+- 定期支出のリマインダー通知
+- 支出カテゴリのカスタム機能
+- グラフの詳細表示・比較モード
+- PWA対応・モバイルUI最適化
+
+---
+
+📝 **リリース日:** 2025-09-26  
+👨‍💻 **作者:** Yuta Kiwaki  
+📂 **リポジトリ:** [MyLife Assistant](https://github.com/Eve04lim/MyLife-Assistant)
