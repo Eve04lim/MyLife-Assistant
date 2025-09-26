@@ -13,10 +13,12 @@ body {
   /* 🔽 Tailwind v4 ユーティリティが参照するトークン（bg-primary 等）*/
   --color-background: hsl(0 0% 100%);
   --color-foreground: hsl(222.2 84% 4.9%);
+  --color-card: hsl(0 0% 100%);
   --color-muted: hsl(210 40% 96.1%);
   --color-muted-foreground: hsl(215.4 16.3% 46.9%);
   --color-primary: hsl(221.2 83.2% 53.3%);
   --color-primary-foreground: hsl(210 40% 98%);
+  --color-border: hsl(214.3 31.8% 91.4%);
 
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -32,20 +34,46 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* === semantic color utilities (Tailwindの代替) === */
-.bg-primary {
-  background-color: var(--color-primary);
-}
-.text-primary {
-  color: var(--color-primary);
-}
+@layer utilities {
+  /* --- Semantic background/text --- */
+  .bg-background {
+    background-color: var(--color-background);
+  }
+  .text-foreground {
+    color: var(--color-foreground);
+  }
+  .bg-card {
+    background-color: var(--color-card, var(--color-background));
+  }
+  .text-muted-foreground {
+    color: var(--color-muted-foreground);
+  }
+  .bg-muted {
+    background-color: var(--color-muted);
+  }
 
-/* 前景色トークンも使っている箇所向け */
-.text-primary-foreground {
-  color: var(--color-primary-foreground);
-}
-.bg-primary-foreground {
-  background-color: var(--color-primary-foreground);
+  /* --- Primary (shadcn/ui 相当) --- */
+  .text-primary {
+    color: var(--color-primary);
+  }
+  .bg-primary {
+    background-color: var(--color-primary);
+  }
+  .text-primary-foreground {
+    color: var(--color-primary-foreground);
+  }
+  .bg-primary-foreground {
+    background-color: var(--color-primary-foreground);
+  }
+
+  /* --- Border / Ring --- */
+  /* Tailwind の .border（幅指定）と衝突しないよう、色は別クラスにする */
+  .border-border {
+    border-color: var(--color-border, hsl(214.3 31.8% 91.4%));
+  }
+  .ring-border {
+    --tw-ring-color: var(--color-border, hsl(214.3 31.8% 91.4%));
+  }
 }
 
 /* ダークモード（OS設定に追従）でトークン上書き */
@@ -53,10 +81,12 @@ body {
   :root {
     --color-background: hsl(222.2 84% 4.9%);
     --color-foreground: hsl(210 40% 98%);
+    --color-card: hsl(222.2 84% 4.9%);
     --color-muted: hsl(217.2 32.6% 17.5%);
     --color-muted-foreground: hsl(215 20.2% 65.1%);
     --color-primary: hsl(217.2 91.2% 59.8%);
     --color-primary-foreground: hsl(222.2 84% 4.9%);
+    --color-border: hsl(217.2 32.6% 17.5%);
   }
 }
 

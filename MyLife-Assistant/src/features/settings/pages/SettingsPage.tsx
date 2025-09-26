@@ -8,10 +8,11 @@ import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { useSettings } from '@/stores/settingsStore'
 import { updateSettings } from '@/features/settings/application/usecases/UpdateSettings'
+import type { Settings } from '@/features/settings/domain/types'
 
 const schema = z.object({
-  monthStartDay: z.coerce.number().int().min(1).max(28),
-  monthlyBudget: z.coerce.number().nonnegative(),
+  monthStartDay: z.number().int().min(1).max(28),
+  monthlyBudget: z.number().nonnegative(),
 })
 type FormValues = z.infer<typeof schema>
 
@@ -34,7 +35,11 @@ export function SettingsPage() {
   const monthlyBudgetId = useId()
 
   const onSubmit = (values: FormValues) => {
-    updateSettings(values)
+    // Settings['monthStartDay'] がユニオン型の場合に備え最小限キャスト
+    updateSettings({
+      monthStartDay: values.monthStartDay as Settings['monthStartDay'],
+      monthlyBudget: values.monthlyBudget,
+    })
   }
 
   return (

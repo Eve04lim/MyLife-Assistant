@@ -12,7 +12,7 @@ import { expenseRepo } from '@/features/expenses/infra/repositories/singleton'
 const schema = z.object({
   date: z.string().min(1, '必須'),
   category: z.enum(['food', 'rent', 'utilities', 'transport', 'other']),
-  amount: z.coerce.number().nonnegative('0以上'),
+  amount: z.number().nonnegative('0以上'),
   memo: z.string().optional(),
 })
 type FormValues = z.infer<typeof schema>
@@ -54,7 +54,7 @@ export function ExpenseForm({ onAdded }: { onAdded?: () => void }) {
   }
 
   return (
-    <form className="grid gap-3" onSubmit={handleSubmit(onSubmit)}>
+    <form data-expense-form className="grid gap-3" onSubmit={handleSubmit(onSubmit)}>
       <div className="grid gap-1.5">
         <Label htmlFor={dateId}>日付</Label>
         <Input id={dateId} type="date" {...register('date')} />

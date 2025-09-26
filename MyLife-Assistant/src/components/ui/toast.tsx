@@ -7,6 +7,7 @@ export interface ToastProps {
   description?: string
   variant?: 'default' | 'destructive'
   duration?: number
+  onOpenChange?: (open: boolean) => void
 }
 
 const Toast = React.forwardRef<

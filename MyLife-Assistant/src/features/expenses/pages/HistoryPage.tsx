@@ -5,7 +5,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/components/ui/use-toast'
 import { useExpensesStore } from '@/stores/expensesStore'
-import { shallow } from 'zustand/shallow'
 import { useSearchParams } from 'react-router-dom'
 import { deleteExpense } from '@/features/expenses/application/usecases/DeleteExpense'
 import { importExpensesFromFile } from '@/features/expenses/application/usecases/ImportCsv'
@@ -13,11 +12,11 @@ import { exportExpensesToCsvWithOptions } from '@/features/expenses/application/
 import { toExpensesCsvFromView, downloadTextAsFile, addBom } from '@/lib/csv'
 import { expenseRepo } from '@/features/expenses/infra/repositories/singleton'
 import dayjs from 'dayjs'
-import type { Category } from '@/features/expenses/domain/types'
+import type { Category, Expense } from '@/features/expenses/domain/types'
 
 export function HistoryPage() {
-  // items は shallow 比較で購読
-  const items = useExpensesStore((s) => s.items, shallow)
+  // items を購読
+  const items = useExpensesStore((s) => s.items) as Expense[]
   const { toast } = useToast()
   const [searchParams] = useSearchParams()
   // ---- Step 5-L 追加: 履歴操作 ----
@@ -120,7 +119,7 @@ export function HistoryPage() {
     // Step 1: テキスト検索
     const textFiltered = !debouncedQuery
       ? items
-      : items.filter((it) => {
+      : items.filter((it: Expense) => {
           const memo = (it.memo ?? '').toLowerCase()
           const category = (it.category ?? '').toLowerCase()
           const dateStr = dayjs(it.date).format('YYYY-MM-DD').toLowerCase()
@@ -134,7 +133,7 @@ export function HistoryPage() {
         })
 
     // Step 2: 日付範囲フィルタ
-    const dateFiltered = textFiltered.filter((it) => {
+    const dateFiltered = textFiltered.filter((it: Expense) => {
       const itemDate = dayjs(it.date)
       let withinRange = true
 
@@ -156,14 +155,14 @@ export function HistoryPage() {
     })
 
     // Step 3: 金額範囲フィルタ
-    const amountFiltered = dateFiltered.filter((it) => {
+    const amountFiltered = dateFiltered.filter((it: Expense) => {
       const minValue = amountMin ? Number(amountMin) : Number.NEGATIVE_INFINITY
       const maxValue = amountMax ? Number(amountMax) : Number.POSITIVE_INFINITY
       return it.amount >= minValue && it.amount <= maxValue
     })
 
     // Step 4: カテゴリ絞り込みフィルタ
-    const categoryFiltered = amountFiltered.filter((it) => {
+    const categoryFiltered = amountFiltered.filter((it: Expense) => {
       // selectedCategories.size === 0 の場合は全カテゴリ対象
       return selectedCategories.size === 0 || selectedCategories.has(it.category)
     })

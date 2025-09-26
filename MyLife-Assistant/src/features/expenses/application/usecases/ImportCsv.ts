@@ -12,7 +12,7 @@ export async function importExpensesFromCsvText(
   // 履歴保存
   useExpensesStore.getState().commit()
   const created = await repo.addMany(rows)
-  useExpensesStore.getState().addMany(created.map((c) => ({ id: c.id, ...c })))
+  useExpensesStore.getState().addMany(created.map((c) => ({ ...c })))
   return { imported: created, errors }
 }
 
